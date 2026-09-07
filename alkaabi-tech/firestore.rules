@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // بيانات الطلبات الكاملة (اسم، هاتف، سعر...) - للأدمن فقط
+    match /orders/{orderId} {
+      allow read, write: if isAdmin();
+    }
+
+    // عداد أرقام الطلبات (AK-0001, AK-0002 ...) - للأدمن فقط
+    match /counters/{counterId} {
+      allow read, write: if isAdmin();
+    }
+
+    // نسخة عامة مبسّطة لكل طلب، معرّفة برمز عشوائي (trackingToken)
+    // - أي شخص يعرف الرمز بالضبط يقدر يقرأ طلبه (get)
+    // - ممنوع منعاً باتاً استعراض كل الطلبات (list) حتى لا يتصفح أحد طلبات غيره
+    // - الكتابة/التعديل للأدمن فقط
+    match /public_tracking/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin();
+    }
+  }
+}
